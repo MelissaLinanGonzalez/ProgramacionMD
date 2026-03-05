@@ -19,18 +19,17 @@ abstract class CasaDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: CasaDatabase? = null
-        
+
         fun getDatabase(context: Context): CasaDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                Room.databaseBuilder(
                     context.applicationContext,
                     CasaDatabase::class.java,
                     "casas_database"
                 )
-                .fallbackToDestructiveMigration()
-                .build()
-                INSTANCE = instance
-                instance
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { INSTANCE = it } // Esto asigna y retorna la instancia correctamente
             }
         }
     }
