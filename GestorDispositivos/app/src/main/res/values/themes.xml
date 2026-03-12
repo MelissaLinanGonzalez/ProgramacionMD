@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.GestorDispositivos" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Material 3 color scheme -->
+        <item name="colorPrimary">@color/md_primary</item>
+        <item name="colorPrimaryDark">@color/md_primary_dark</item>
+        <item name="colorOnPrimary">@color/md_on_primary</item>
+        <item name="colorSecondary">@color/md_secondary</item>
+        <item name="colorOnSecondary">@color/md_on_secondary</item>
+        <item name="colorError">@color/md_error</item>
+        <item name="android:colorBackground">@color/md_surface</item>
+        <item name="colorOnSurface">@color/md_on_surface</item>
+    </style>
+
+    <style name="Theme.GestorDispositivos" parent="Base.Theme.GestorDispositivos" />
+</resources>

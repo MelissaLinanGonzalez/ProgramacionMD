@@ -1,0 +1,71 @@
+<resources>
+    <string name="app_name">Gestor de Dispositivos</string>
+
+    <!-- MainActivity -->
+    <string name="title_main">Inventario de Dispositivos</string>
+    <string name="chart_title">Estado de los Dispositivos</string>
+    <string name="btn_sync">Sincronizar con Servidor</string>
+    <string name="fab_report">Reportar Incidencia</string>
+    <string name="section_summary">Resumen por Tipo</string>
+    <string name="last_sync">Última sincronización: %1$s</string>
+    <string name="no_sync_yet">Sin sincronización previa</string>
+
+    <!-- Estados de dispositivos -->
+    <string name="status_active">Activo</string>
+    <string name="status_inactive">Inactivo</string>
+    <string name="status_repair">En reparación</string>
+
+    <!-- Tipos de dispositivos -->
+    <string name="type_laptop">Portátil</string>
+    <string name="type_mobile">Móvil</string>
+    <string name="type_tablet">Tablet</string>
+    <string name="type_server">Servidor</string>
+
+    <!-- ReportActivity -->
+    <string name="title_report">Reportar Incidencia</string>
+    <string name="hint_report_title">Título de la incidencia</string>
+    <string name="hint_report_device">Dispositivo afectado</string>
+    <string name="hint_report_description">Descripción detallada</string>
+    <string name="label_priority">Prioridad</string>
+    <string name="label_device">Dispositivo afectado</string>
+    <string name="label_new_status">Nuevo Estado</string>
+    <string name="btn_send_report">Enviar Reporte</string>
+    <string name="report_sent_ok">Reporte enviado correctamente</string>
+    <string name="report_error_empty">Por favor, completa todos los campos</string>
+    <string name="report_no_devices">No hay dispositivos en la base de datos</string>
+
+    <!-- Prioridades -->
+    <string-array name="priorities">
+        <item>Baja</item>
+        <item>Media</item>
+        <item>Alta</item>
+        <item>Crítica</item>
+    </string-array>
+
+    <!-- Estados de dispositivos (para Spinner) -->
+    <string-array name="device_statuses">
+        <item>Activo</item>
+        <item>Inactivo</item>
+        <item>En reparación</item>
+    </string-array>
+
+    <!-- Notificaciones -->
+    <string name="notification_channel_name">Gestor de Dispositivos</string>
+    <string name="notification_channel_desc">Notificaciones de sincronización y reportes</string>
+    <string name="notification_sync_title">Sincronización completada</string>
+    <string name="notification_sync_text">Los dispositivos se han sincronizado correctamente.</string>
+    <string name="notification_report_title">Reporte enviado</string>
+    <string name="notification_report_text">Tu reporte de incidencia ha sido registrado.</string>
+
+    <!-- Wireless -->
+    <string name="wireless_bt_connected">Conexión Bluetooth simulada exitosa</string>
+    <string name="wireless_wifi_connected">Conexión Wi-Fi simulada exitosa</string>
+
+    <!-- Sync -->
+    <string name="sync_in_progress">Sincronizando…</string>
+    <string name="sync_complete">Sincronización completada</string>
+    <string name="sync_error">Error al sincronizar</string>
+
+    <!-- General -->
+    <string name="devices_count">%1$d dispositivos</string>
+</resources>
