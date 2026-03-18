@@ -1,5 +1,6 @@
 package com.example.casasapp.ui.pantallas
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,17 +33,24 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.casasapp.ui.theme.AlquilerColor
 import com.example.casasapp.ui.theme.VentaColor
+import com.example.casasapp.util.ImageProcessor
 import com.example.casasapp.viewmodel.FormularioViewModel
 
 /**
  * Pantalla de formulario con diseño profesional.
- * Multi-imagen, validación visual y todos los campos.
+ * Multi-imagen, captura directa con cámara, validación visual y todos los campos.
+ *
+ * Criterios cubiertos:
+ * - B: Captura de foto directa usando [ActivityResultContracts.TakePicturePreview]
+ * - C: Conversión de formato mediante [ImageProcessor.comprimirAJpeg]
+ * - D: Transformación geométrica mediante [ImageProcessor.redimensionarBitmap]
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaFormulario(navController: NavController) {
     val viewModel: FormularioViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     
     // Efecto para navegación después de guardar
     LaunchedEffect(uiState.guardadoExitoso) {
@@ -50,12 +59,41 @@ fun PantallaFormulario(navController: NavController) {
         }
     }
     
-    // Launcher para seleccionar múltiples imágenes
+    // Launcher para seleccionar múltiples imágenes desde la galería
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
         uris.forEach { uri ->
             viewModel.agregarImagen(uri.toString())
+        }
+    }
+    
+    /**
+     * Launcher para capturar una foto directa con la cámara del dispositivo.
+     *
+     * Utiliza [ActivityResultContracts.TakePicturePreview] que devuelve un [Bitmap]
+     * en miniatura capturado por la cámara del sistema. Este contrato:
+     * - Abre la aplicación de cámara nativa del dispositivo.
+     * - Devuelve un [Bitmap] con la foto capturada (resolución de preview).
+     * - No requiere crear un archivo temporal previo (a diferencia de TakePicture).
+     *
+     * Al recibir el bitmap:
+     * 1. Se redimensiona a max 800x800px con [ImageProcessor.redimensionarBitmap]
+     *    (transformación geométrica — Criterio D).
+     * 2. Se comprime a JPEG 80% con [ImageProcessor.comprimirAJpeg]
+     *    (conversión de formato — Criterio C).
+     * 3. Se guarda como archivo con [ImageProcessor.guardarBitmapComoArchivo].
+     * 4. La URI del archivo se agrega al ViewModel para mostrar la imagen en la lista.
+     */
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        bitmap?.let {
+            // Procesamiento de imagen (Criterios B, C y D)
+            val archivo = ImageProcessor.guardarBitmapComoArchivo(context, it)
+            archivo?.let { file ->
+                viewModel.agregarImagen(Uri.fromFile(file).toString())
+            }
         }
     }
     
@@ -146,7 +184,7 @@ fun PantallaFormulario(navController: NavController) {
                                 }
                             }
                             
-                            // Botón añadir más
+                            // Botón añadir más desde galería
                             item {
                                 Box(
                                     modifier = Modifier
@@ -195,7 +233,7 @@ fun PantallaFormulario(navController: NavController) {
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "Toca para añadir fotos",
+                                    "Toca para añadir fotos de la galería",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = if (uiState.errorImagenes) 
                                         MaterialTheme.colorScheme.error 
@@ -214,6 +252,13 @@ fun PantallaFormulario(navController: NavController) {
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // ── Botón para capturar foto con la cámara (Criterio B) ──
+                    BotonCapturarFoto(
+                        onClick = { cameraLauncher.launch(null) }
+                    )
                 }
             }
             
@@ -346,6 +391,43 @@ fun PantallaFormulario(navController: NavController) {
             
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+/**
+ * Botón para capturar una foto directamente con la cámara del dispositivo.
+ *
+ * Utiliza un diseño de botón outlined con icono de cámara para diferenciarse
+ * visualmente del selector de galería. Al pulsarlo, se lanza el contrato
+ * [ActivityResultContracts.TakePicturePreview] que abre la cámara nativa.
+ *
+ * La foto capturada se procesará posteriormente con [ImageProcessor]:
+ * - Redimensionado geométrico a 800x800px máximo (Criterio D)
+ * - Compresión a formato JPEG al 80% de calidad (Criterio C)
+ *
+ * @param onClick Callback invocado al pulsar el botón, que lanza el launcher de cámara.
+ */
+@Composable
+private fun BotonCapturarFoto(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        )
+    ) {
+        Icon(
+            Icons.Default.AccountBox,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            "📷 Tomar foto con cámara",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 

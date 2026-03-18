@@ -1,8 +1,12 @@
 package com.example.casasapp.ui.pantallas
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,12 +31,17 @@ import com.example.casasapp.ui.components.SearchBar
 import com.example.casasapp.ui.theme.AlquilerColor
 import com.example.casasapp.ui.theme.VentaColor
 import com.example.casasapp.viewmodel.CasaViewModel
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.Locale
 
 /**
  * Pantalla de Galería - Diseño Clean & Bold
- * Listado de propiedades con tarjetas anchas y alto contraste
+ * Listado de propiedades con tarjetas anchas y alto contraste.
+ *
+ * Criterio F: Cada [PropertyCard] se envuelve en [AnimatedVisibility]
+ * con efecto combinado de [fadeIn] y [slideInVertically] con delay escalonado
+ * para crear un efecto de cascada al cargar la lista.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +50,16 @@ fun PantallaGaleria(navController: NavController) {
     val casas by viewModel.casas.collectAsStateWithLifecycle()
     val filtroTipo by viewModel.filtroTipo.collectAsStateWithLifecycle()
     val busqueda by viewModel.busqueda.collectAsStateWithLifecycle()
+    
+    // Estado para controlar la animación escalonada de las tarjetas
+    var itemsVisibles by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(casas) {
+        // Reset y relanzar la animación cuando cambian los datos
+        itemsVisibles = false
+        delay(100)
+        itemsVisibles = true
+    }
     
     Scaffold(
         topBar = {
@@ -119,11 +138,39 @@ fun PantallaGaleria(navController: NavController) {
                     ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(casas, key = { it.id }) { casa ->
-                        PropertyCard(
-                            casa = casa,
-                            onClick = { navController.navigate("detalle/${casa.id}") }
-                        )
+                    itemsIndexed(casas, key = { _, casa -> casa.id }) { index, casa ->
+                        /**
+                         * AnimatedVisibility con fadeIn + slideInVertically (Criterio F).
+                         *
+                         * Cada tarjeta de propiedad se envuelve en [AnimatedVisibility]
+                         * para una entrada animada combinando:
+                         * - [fadeIn]: Transición de opacidad progresiva (400ms).
+                         * - [slideInVertically]: Deslizamiento desde abajo con delay
+                         *   escalonado (index * 80ms) para efecto cascada.
+                         *
+                         * Esto mejora la experiencia del usuario al presentar
+                         * los resultados de búsqueda de forma dinámica y atractiva.
+                         */
+                        AnimatedVisibility(
+                            visible = itemsVisibles,
+                            enter = fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = 400,
+                                    delayMillis = index * 80
+                                )
+                            ) + slideInVertically(
+                                animationSpec = tween(
+                                    durationMillis = 400,
+                                    delayMillis = index * 80
+                                ),
+                                initialOffsetY = { it / 3 }
+                            )
+                        ) {
+                            PropertyCard(
+                                casa = casa,
+                                onClick = { navController.navigate("detalle/${casa.id}") }
+                            )
+                        }
                     }
                 }
             }

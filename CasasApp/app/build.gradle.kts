@@ -77,4 +77,10 @@ dependencies {
     // Lifecycle ViewModel Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+
+    // Media3 (ExoPlayer) para reproductor de vídeo (Criterios E y G)
+    val media3Version = "1.2.1"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+    implementation("androidx.media3:media3-session:$media3Version")
 }

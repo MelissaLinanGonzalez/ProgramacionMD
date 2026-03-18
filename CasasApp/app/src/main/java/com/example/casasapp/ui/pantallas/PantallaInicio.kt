@@ -1,10 +1,15 @@
 package com.example.casasapp.ui.pantallas
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -30,12 +35,17 @@ import com.example.casasapp.data.SessionManager
 import com.example.casasapp.ui.theme.AlquilerColor
 import com.example.casasapp.ui.theme.VentaColor
 import com.example.casasapp.viewmodel.CasaViewModel
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.Locale
 
 /**
  * Pantalla de Inicio / Dashboard - Diseño Clean & Bold
- * Cabecera blanca con saludo, secciones y NavigationBar inferior
+ * Cabecera blanca con saludo, secciones y NavigationBar inferior.
+ *
+ * Criterio F: Animaciones explícitas con [AnimatedVisibility] usando
+ * [fadeIn] y [slideInVertically] para la aparición de tarjetas de propiedades
+ * con efecto escalonado (staggered animation).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,10 +176,26 @@ fun PantallaInicio(navController: NavController) {
 }
 
 /**
- * Contenido principal del Home/Dashboard
+ * Contenido principal del Home/Dashboard.
+ *
+ * Las tarjetas de propiedades se envuelven en [AnimatedVisibility] con efecto
+ * de [fadeIn] y [slideInVertically] escalonado para crear un efecto visual
+ * atractivo al cargar la lista. Cada tarjeta aparece con un retraso
+ * progresivo de 100ms para simular una cascada.
+ *
+ * Criterio F: Animaciones explícitas en Compose.
  */
 @Composable
 private fun HomeContent(casas: List<Casa>, navController: NavController) {
+    // Estado para controlar la visibilidad animada de las tarjetas
+    var itemsVisibles by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(casas) {
+        // Pequeño delay para que la animación sea visible al entrar
+        delay(150)
+        itemsVisibles = true
+    }
+    
     LazyColumn(
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -201,11 +227,39 @@ private fun HomeContent(casas: List<Casa>, navController: NavController) {
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(casas.take(5)) { casa ->
-                        HorizontalPropertyCard(
-                            casa = casa,
-                            onClick = { navController.navigate("detalle/${casa.id}") }
-                        )
+                    itemsIndexed(casas.take(5)) { index, casa ->
+                        /**
+                         * AnimatedVisibility con fadeIn + slideInVertically (Criterio F).
+                         *
+                         * Cada tarjeta se envuelve en [AnimatedVisibility] para que
+                         * aparezca con una animación combinada de:
+                         * - [fadeIn]: Transición de opacidad de 0 a 1 con duración de 500ms.
+                         * - [slideInVertically]: Deslizamiento vertical desde abajo (40px)
+                         *   con un retraso escalonado basado en el índice del elemento.
+                         *
+                         * El delay escalonado (index * 100ms) crea un efecto cascada
+                         * donde cada tarjeta aparece ligeramente después de la anterior.
+                         */
+                        AnimatedVisibility(
+                            visible = itemsVisibles,
+                            enter = fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    delayMillis = index * 100
+                                )
+                            ) + slideInVertically(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    delayMillis = index * 100
+                                ),
+                                initialOffsetY = { it / 2 }
+                            )
+                        ) {
+                            HorizontalPropertyCard(
+                                casa = casa,
+                                onClick = { navController.navigate("detalle/${casa.id}") }
+                            )
+                        }
                     }
                 }
             }
@@ -226,11 +280,27 @@ private fun HomeContent(casas: List<Casa>, navController: NavController) {
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(casas.takeLast(3)) { casa ->
-                        HorizontalPropertyCard(
-                            casa = casa,
-                            onClick = { navController.navigate("detalle/${casa.id}") }
-                        )
+                    itemsIndexed(casas.takeLast(3)) { index, casa ->
+                        AnimatedVisibility(
+                            visible = itemsVisibles,
+                            enter = fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    delayMillis = (index + 5) * 100
+                                )
+                            ) + slideInVertically(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    delayMillis = (index + 5) * 100
+                                ),
+                                initialOffsetY = { it / 2 }
+                            )
+                        ) {
+                            HorizontalPropertyCard(
+                                casa = casa,
+                                onClick = { navController.navigate("detalle/${casa.id}") }
+                            )
+                        }
                     }
                 }
             } else {
