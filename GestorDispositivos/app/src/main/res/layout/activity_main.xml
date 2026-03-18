@@ -22,8 +22,8 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
-        android:paddingBottom="80dp"
+        android:layout_marginTop="50dp"
+        android:paddingBottom="140dp"
         android:clipToPadding="false">
 
         <LinearLayout
@@ -137,13 +137,28 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Botón: Compartir Informe vía Bluetooth / Mensajes -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCompartirInforme"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="80dp"
+        android:text="Compartir Informe (Bluetooth / Mensajes)"
+        android:drawableStart="@android:drawable/stat_sys_data_bluetooth"
+        android:drawablePadding="8dp" />
+
     <!-- FAB: Reportar incidencia -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabReport"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="140dp"
         android:contentDescription="@string/fab_report"
         android:src="@android:drawable/ic_dialog_alert"
         app:backgroundTint="@color/fab_color"

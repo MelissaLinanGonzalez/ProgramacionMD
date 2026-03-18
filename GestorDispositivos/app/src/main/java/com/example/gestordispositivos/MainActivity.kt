@@ -1,5 +1,7 @@
 package com.example.gestordispositivos
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -21,6 +23,7 @@ import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,6 +38,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var database: AppDatabase
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var notificationHelper: NotificationHelper
+
+    companion object {
+        private const val REQUEST_ENABLE_BT = 1001
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,12 +66,17 @@ class MainActivity : AppCompatActivity() {
         updateLastSyncLabel()
 
         // Botón de sincronización
-        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSync)
+        findViewById<MaterialButton>(R.id.btnSync)
             .setOnClickListener { performSync() }
 
         // FAB → Reportar incidencia
         findViewById<FloatingActionButton>(R.id.fabReport).setOnClickListener {
             startActivity(Intent(this, ReportActivity::class.java))
+        }
+
+        // Botón → Compartir Informe vía Bluetooth / Mensajes
+        findViewById<MaterialButton>(R.id.btnCompartirInforme).setOnClickListener {
+            compartirInformeInalambrico()
         }
     }
 
@@ -179,6 +191,85 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    // ──────── Bluetooth & Compartir Informe ────────
+
+    /**
+     * Criterio c) Uso de clases para conexión con dispositivos inalámbricos (Bluetooth).
+     * Criterio d) Uso de clases para intercambio de mensajes de texto/multimedia (ACTION_SEND).
+     *
+     * Comprueba el estado del Bluetooth, genera un informe de inventario desde Room
+     * y lanza un Intent chooser para enviar el informe vía Bluetooth o SMS/MMS.
+     */
+    @Suppress("DEPRECATION")
+    private fun compartirInformeInalambrico() {
+        // a) Instanciar BluetoothAdapter
+        val bluetoothAdapter: BluetoothAdapter? =
+            (getSystemService(BluetoothManager::class.java))?.adapter
+                ?: BluetoothAdapter.getDefaultAdapter()
+
+        // b) Comprobar si el Bluetooth está soportado
+        if (bluetoothAdapter == null) {
+            Toast.makeText(this, "Este dispositivo no soporta Bluetooth", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // b) Comprobar si el Bluetooth está activado
+        if (!bluetoothAdapter.isEnabled) {
+            Toast.makeText(this, "Bluetooth desactivado. Solicitando activación…", Toast.LENGTH_SHORT).show()
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            return
+        }
+
+        // c) Bluetooth activado → leer dispositivos de Room en corrutina
+        lifecycleScope.launch(Dispatchers.IO) {
+            val dao = database.deviceDao()
+
+            // Contar por tipo y estado
+            val totalPortatiles = dao.countByType("Portátil")
+            val totalMoviles    = dao.countByType("Móvil")
+            val totalTablets    = dao.countByType("Tablet")
+            val totalServidores = dao.countByType("Servidor")
+
+            val activos      = dao.countByStatus("Activo")
+            val inactivos    = dao.countByStatus("Inactivo")
+            val enReparacion = dao.countByStatus("En reparación")
+            val totalGeneral = dao.getTotal()
+
+            // d) Generar String formateado con el informe
+            val informe = buildString {
+                appendLine("📋 Informe de Inventario de Dispositivos")
+                appendLine("=========================================")
+                appendLine()
+                appendLine("📊 Total de dispositivos: $totalGeneral")
+                appendLine()
+                appendLine("── Por Tipo ──")
+                appendLine("  • Portátiles: $totalPortatiles")
+                appendLine("  • Móviles: $totalMoviles")
+                appendLine("  • Tablets: $totalTablets")
+                appendLine("  • Servidores: $totalServidores")
+                appendLine()
+                appendLine("── Por Estado ──")
+                appendLine("  • Activos: $activos")
+                appendLine("  • Inactivos: $inactivos")
+                appendLine("  • En reparación: $enReparacion")
+                appendLine()
+                appendLine("Generado desde GestorDispositivos.")
+            }
+
+            // e) Crear Intent ACTION_SEND y lanzar el chooser en el hilo principal
+            withContext(Dispatchers.Main) {
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Informe de Inventario - GestorDispositivos")
+                    putExtra(Intent.EXTRA_TEXT, informe)
+                }
+                val chooser = Intent.createChooser(sendIntent, "Enviar informe vía Bluetooth o SMS")
+                startActivity(chooser)
+            }
+        }
     }
 
     // ──────── Helpers ────────
